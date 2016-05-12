@@ -26,3 +26,11 @@
 *.exe
 *.out
 *.app
+/scan-auto-fetch/Debug/*.ilk
+/scan-auto-fetch/Debug/*.pdb
+/scan-auto-fetch/scan-auto-fetch/Debug/scan-auto-fetch.tlog/*.tlog
+/scan-auto-fetch/scan-auto-fetch/Debug/*.log
+/scan-auto-fetch/scan-auto-fetch/Debug/scan-auto-fetch.tlog/*.lastbuildstate
+/scan-auto-fetch/*.sdf
+/scan-auto-fetch/scan-auto-fetch/Debug/*.idb
+/scan-auto-fetch/scan-auto-fetch/x64/Debug/scan-auto-fetch.tlog/*.tlog
