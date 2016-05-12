@@ -22,7 +22,7 @@ Allowed options:
     --ip arg            path to the file containing ip addresses
     --t arg             time in second between ip tests
     --script_on arg     path to the file containing the list of script to launch when all ip answer to ping
-    --script_off arg    path to the file containing the list of script to launch when not all ip answer to ping
+    --script_off arg    path to the file containing the list of script to launch when all ip does not answer to ping
     --script_once arg   path to the file containing the list of script to launch when at least one ip answer to ping
     
     
