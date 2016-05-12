@@ -10,9 +10,9 @@
 
 enum ip_test_result
 {
+   IP_NONE, //none of the ips responded
    IP_ALL, //all ips responded
    IP_SOME, //only some ips responded
-   IP_NONE, //none of the ips responded
    SIZE //enum size, keep it at the end
 };
 
@@ -65,14 +65,22 @@ ip_test_result test_ips(const input& in)
       }));
    }
 
-   if (std::all_of(ping_results.begin(), ping_results.end(), 
-      [](auto& fut) { return fut.get() == EXIT_SUCCESS; }))
-      return IP_ALL;
 
-   if (std::any_of(ping_results.begin(), ping_results.end(), 
-      [](auto& fut) { return fut.get() == EXIT_SUCCESS; }))
-      return IP_SOME;
-
+   bool all = true;
+   bool some = false;
+   for (auto& fut : ping_results)
+   {
+      if (fut.get() == EXIT_SUCCESS)
+      {
+         some = true;
+      }
+      else
+      {
+         all = false;
+      }
+   }
+   if (all) return IP_ALL;
+   if (some) return IP_SOME;
    return IP_NONE;
 }
 
@@ -82,8 +90,6 @@ int main(int argc, char** argv)
 
    if (vm.first == EXIT_SUCCESS)
    {
-      input input_instance;
-
       auto result = parse_input(vm.second);
       if (result.first == EXIT_SUCCESS)
       {
@@ -97,8 +103,8 @@ int main(int argc, char** argv)
 
          bool loop = true;
          do {
-            ip_state_machine[test_ips(result.second)](input_instance);
-            std::this_thread::sleep_for(input_instance.interval);
+            ip_state_machine[test_ips(result.second)](result.second);
+            std::this_thread::sleep_for(result.second.interval);
          } while (loop);
       }
       return result.first;
