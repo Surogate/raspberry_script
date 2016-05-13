@@ -29,7 +29,7 @@ std::ostream& operator<<(std::ostream& stream, const input& in)
    return stream;
 }
 
-std::pair<int, boost::program_options::variables_map> parse_program_option(int argc, char** argv)
+return_status<boost::program_options::variables_map> parse_program_option(int argc, char** argv)
 {
    int status = EXIT_SUCCESS;
    boost::program_options::options_description desc("Allowed options");
@@ -68,10 +68,10 @@ std::pair<int, boost::program_options::variables_map> parse_program_option(int a
       std::cout << desc << std::endl;
    }
 
-   return std::make_pair(status, vm);
+   return return_status<boost::program_options::variables_map>(status, std::move(vm));
 }
 
-std::pair<int, std::vector<std::string>> fetch_file_line(const astd::filesystem::path& path)
+return_status<std::vector<std::string>> fetch_file_line(const astd::filesystem::path& path)
 {
    int status = EXIT_FAILURE;
    std::cout << path << std::endl;
@@ -88,10 +88,10 @@ std::pair<int, std::vector<std::string>> fetch_file_line(const astd::filesystem:
       status = EXIT_SUCCESS;
    }
 
-   return std::make_pair(status, result);
+   return return_status<std::vector<std::string>>(status, std::move(result));
 }
 
-std::pair<int, std::vector<std::string>> parse_param(const boost::program_options::variables_map& vm, const astd::string_view param_name)
+return_status<std::vector<std::string>> parse_param(const boost::program_options::variables_map& vm, const astd::string_view param_name)
 {
    auto it = vm.find(param_name.data());
    if (it != vm.end())
@@ -99,18 +99,18 @@ std::pair<int, std::vector<std::string>> parse_param(const boost::program_option
       std::cout << param_name << " ";
       return fetch_file_line(it->second.as<astd::filesystem::path>());
    }
-   return std::make_pair(EXIT_FAILURE, std::vector<std::string>());
+   return return_status<std::vector<std::string>>();
 }
 
-std::pair<int, input> parse_input(const boost::program_options::variables_map& vm)
+return_status<input> parse_input(const boost::program_options::variables_map& vm)
 {
    int result = EXIT_SUCCESS;
    input input_instance;
 
    auto ip_param = parse_param(vm, "ip");
-   if (ip_param.first == EXIT_SUCCESS)
+   if (ip_param)
    {
-      input_instance.ips = ip_param.second;
+      input_instance.ips = ip_param.value();
    }
    else { result = EXIT_FAILURE; }
 
@@ -127,21 +127,21 @@ std::pair<int, input> parse_input(const boost::program_options::variables_map& v
    input_instance.threaded_script = vm.find("no_concurrency") == vm.end();
 
    auto script_allp = parse_param(vm, "script_all");
-   if (script_allp.first == EXIT_SUCCESS)
+   if (script_allp)
    {
-      input_instance.script_all = script_allp.second;
+      input_instance.script_all = script_allp.value();
    }
 
    auto script_somep = parse_param(vm, "script_some");
-   if (script_somep.first == EXIT_SUCCESS)
+   if (script_somep)
    {
-      input_instance.script_some = script_somep.second;
+      input_instance.script_some = script_somep.value();
    }
 
    auto script_nonep = parse_param(vm, "script_none");
-   if (script_nonep.first == EXIT_SUCCESS)
+   if (script_nonep)
    {
-      input_instance.script_none = script_nonep.second;
+      input_instance.script_none = script_nonep.value();
    }
 
    if (!input_instance.ips.size())
@@ -158,5 +158,5 @@ std::pair<int, input> parse_input(const boost::program_options::variables_map& v
 
    std::cout << input_instance << std::endl;
 
-   return std::make_pair(result, std::move(input_instance));
+   return return_status<input>(result, std::move(input_instance));
 }

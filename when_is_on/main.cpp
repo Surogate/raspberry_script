@@ -88,10 +88,10 @@ int main(int argc, char** argv)
 {
    auto vm = parse_program_option(argc, argv);
 
-   if (vm.first == EXIT_SUCCESS)
+   if (vm)
    {
-      auto result = parse_input(vm.second);
-      if (result.first == EXIT_SUCCESS)
+      auto result = parse_input(vm.value());
+      if (result)
       {
          std::array<void(*)(const input&), SIZE> ip_state_machine = []() {
             std::array<void(*)(const input&), SIZE> result;
@@ -103,13 +103,12 @@ int main(int argc, char** argv)
 
          bool loop = true;
          do {
-            ip_state_machine[test_ips(result.second)](result.second);
-            std::this_thread::sleep_for(result.second.interval);
+            ip_state_machine[test_ips(result.value())](result.value());
+            std::this_thread::sleep_for(result.value().interval);
          } while (loop);
       }
-      return result.first;
+      return result.status();
    }
-   
 
-   return EXIT_SUCCESS;
+   return EXIT_FAILURE;
 }
