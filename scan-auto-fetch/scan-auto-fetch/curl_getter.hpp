@@ -6,7 +6,7 @@
 #include <vector>
 #include <utility>
 #include "astring_view.hpp"
-#include "curl.h"
+#include <curl/curl.h>
 
 namespace http
 {
@@ -29,7 +29,7 @@ namespace http
 
    public:
 
-      Curl_Getter(T& callback_)
+      Curl_Getter(const T& callback_)
          : callback(callback_), error_message(CURL_ERROR_SIZE)
       {
          static curl_static curl_globals;
@@ -65,13 +65,13 @@ namespace http
          return result;
       }
 
-      T& callback;
+      T callback;
       std::vector<char> error_message;
       CURL* handler;
    };
 
    template <typename T>
-   std::pair<bool, std::string> curl_get(const astd::string_view url, T& callback)
+   std::pair<bool, std::string> curl_get(const astd::string_view url, const T& callback)
    {
       Curl_Getter<T> getter(callback);
       return getter.get({ url.data(), url.size() });

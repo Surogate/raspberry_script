@@ -2,8 +2,8 @@
 #define SOURCE_TOKEN_HPP
 
 #include <utility>
-#include "boost/utility/string_ref.hpp"
-#include "boost/lexical_cast.hpp"
+#include "astring_view.hpp"
+#include <boost/lexical_cast.hpp>
 
 #include "anime_db.hpp"
 
@@ -12,8 +12,8 @@ struct source_token
    bool valid;
    std::pair<std::size_t, std::size_t> place;
    std::vector<std::string> values;
-   boost::string_ref type;
-   boost::string_ref name;
+   astd::string_view type;
+   astd::string_view name;
 
    enum
    {
@@ -46,19 +46,19 @@ struct source_token
    std::size_t size() const { return place.second - place.first; }
    std::string full_name_type() const { return std::string("<").append(name.data(), name.size()).append(":").append(type.data(), type.size()).append(">"); }
 
-   static std::string remplace_token(const boost::string_ref source, const source_token& token, std::size_t value_index)
+   static std::string remplace_token(astd::string_view source, const source_token& token, std::size_t value_index)
    {
       return source.to_string().replace(source.find(token.full_name_type()), token.size() + 1, token.values[value_index]); //size() + 1 to remove the last '>'
    }
 
-   static std::pair<std::size_t, std::size_t> parse_dotted(const boost::string_ref number)
+  static std::pair<std::size_t, std::size_t> parse_dotted(astd::string_view number)
    {
       std::pair<std::size_t, std::size_t> result;
 
       auto dot = number.find('.');
       result.first = boost::lexical_cast<std::size_t>(number.substr(0, dot));
       result.second = 0;
-      if (dot != boost::string_ref::npos)
+      if (dot != astd::string_view::npos)
       {
          result.second = boost::lexical_cast<std::size_t>(number.substr(dot + 1, number.size()));
       }
@@ -73,7 +73,7 @@ struct source_token
    }
 
    template <std::size_t INTEGER_FORMAT_SIZE>
-   static std::vector<std::string> image_token_integer(boost::string_ref number)
+   static std::vector<std::string> image_token_integer(astd::string_view number)
    {
       std::vector<std::string> values;
       for (std::size_t i = 0; i < IMAGE_MAX_NUM; ++i)
@@ -95,17 +95,17 @@ struct source_token
       return values;
    }
 
-   static std::pair<bool, std::vector<std::string>> setup_token(boost::string_ref token_name, boost::string_ref token_type, boost::string_ref number)
+   static std::pair<bool, std::vector<std::string>> setup_token(astd::string_view token_name, astd::string_view token_type, astd::string_view number)
    {
       typedef std::map<
-         /*underlying type*/  boost::string_ref,
-         /*function ptr*/     std::vector<std::string>(*)(boost::string_ref)
+ 	/*underlying type*/  astd::string_view,
+	/*function ptr*/     std::vector<std::string>(*)(astd::string_view)
       > string_func_ptr_map;
-      static std::map< /*token name*/boost::string_ref, string_func_ptr_map > state_machine = 
+      static std::map< /*token name*/astd::string_view, string_func_ptr_map > state_machine = 
       {
          { "number", //pair & token name
             { //string_func_ptr_map
-               { "doted", [](boost::string_ref number) //pair & token type 
+	      { "doted", [](astd::string_view number) //pair & token type 
                            {
                                std::vector<std::string> values(3);
                                auto dotted = parse_dotted(number);
@@ -128,7 +128,7 @@ struct source_token
                                return values;
                             }
                }, //!pair & token type
-               { "integer", [](boost::string_ref number) //pair & token type 
+	      { "integer", [](astd::string_view number) //pair & token type 
                             {
                                  std::vector<std::string> values;
                                  values.emplace_back(boost::lexical_cast<std::string>(boost::lexical_cast<int>(number) + 1));
@@ -158,7 +158,7 @@ struct source_token
       return{ false,{} };
    }
 
-   static std::pair<std::size_t, std::size_t> get_token_place(boost::string_ref source, boost::string_ref token_name)
+  static std::pair<std::size_t, std::size_t> get_token_place(astd::string_view source, astd::string_view token_name)
    {
       auto start = source.find(token_name);
       if (start != std::string::npos)
@@ -174,11 +174,11 @@ struct source_token
       return{ 0, 0 };
    }
 
-   static std::pair<bool, boost::string_ref> get_type(boost::string_ref source, const std::pair<std::size_t, std::size_t>& token_place)
+  static std::pair<bool, astd::string_view> get_type(astd::string_view source, const std::pair<std::size_t, std::size_t>& token_place)
    {
       auto token = source.substr(token_place.first + 1, token_place.second - (token_place.first + 1));
       auto place = token.find(':');
-      if (place != boost::string_ref::npos)
+      if (place != astd::string_view::npos)
       {
          return{ true, token.substr(place + 1) };
       }
