@@ -60,7 +60,7 @@ ip_test_result test_ips(const input& in)
 
    for (auto& ip : in.ips)
    {
-      ping_results.emplace_back(std::async([&ip]() { 
+     ping_results.emplace_back(std::async(std::launch::deferred, [&ip]() { 
          return std::system((std::string("ping ") + ip).c_str()); 
       }));
    }
