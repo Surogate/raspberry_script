@@ -104,7 +104,10 @@ int main(int argc, char** argv)
          bool loop = true;
          do {
             ip_state_machine[test_ips(result.value())](result.value());
-            std::this_thread::sleep_for(result.value().interval);
+	    if (result.value().interval.count())
+	      std::this_thread::sleep_for(result.value().interval);
+	    else
+	      loop = false;
          } while (loop);
       }
       return result.status();
