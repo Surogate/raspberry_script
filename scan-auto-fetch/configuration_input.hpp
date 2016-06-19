@@ -10,6 +10,7 @@
 #include "afilesystem.hpp"
 #include "astring_view.hpp"
 #include "boost/tokenizer.hpp"
+#include "Trim.hpp"
 
 struct configuration_input
 {
@@ -42,10 +43,12 @@ struct configuration_input
       return false;
    }
 
-   static bool parse_line(const std::string& str, configuration_input& input)
+   //boost tokenizer don't like string_view so we keep std::string ref
+   static bool parse_line(astd::string_view str, configuration_input& input)
    {
       boost::char_separator<char> sep{" "};
-      boost::tokenizer<boost::char_separator<char>> tok(str, sep);
+      typedef boost::tokenizer< boost::char_separator<char>, astd::string_view::iterator, std::string> view_token;
+      view_token tok(str, sep);
       std::array<std::string, 3> values;
       std::size_t i = 0;
       for (auto& t : tok)
@@ -91,7 +94,8 @@ struct configuration_input
          std::string line;
          while (ok && std::getline(stream, line))
          {
-            ok = parse_line(line, result.second);
+            auto trimmed_line = trim(line);
+            ok = parse_line(trimmed_line, result.second);
          }
       }
 

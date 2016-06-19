@@ -7,6 +7,7 @@
 #include <algorithm>
 #include "afilesystem.hpp"
 #include "configuration_input.hpp"
+#include "trim.hpp"
 
 struct anime_database
 {
@@ -43,12 +44,13 @@ struct anime_database
          std::size_t line_num = 1;
          while (result.first && std::getline(stream, line))
          {
-            ok = ok && configuration_input::parse_line(line, result.second.input);
+            auto trimmed_line = trim<char>(line);
+            ok = ok && configuration_input::parse_line(trimmed_line, result.second.input);
             if (!ok)
             {
-               if (std::all_of(line.begin(), line.end(), [](auto& c) { return std::isdigit(c) != 0 || c == '.'; })) //if the line is a interger/float
+               if (std::all_of(trimmed_line.begin(), trimmed_line.end(), [](auto& c) { return std::isdigit(c) != 0 || c == '.'; })) //if the line is a interger/float
                {
-                  result.second.number_fetched.emplace_back(line);
+                  result.second.number_fetched.emplace_back(trimmed_line.to_string());
                }
                else //something when bad
                {
