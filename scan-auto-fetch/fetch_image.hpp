@@ -47,14 +47,14 @@ struct fetch_image
    static int fetch_chapter_image(std::string partial_url
       , const source_token& image_token
       , std::size_t image_index
-      , const std::string& directory_name
+      , astd::string_view directory_name
       , const astd::filesystem::path& directory_full_path)
    {
       std::vector<char> file_buffer;
       file_buffer.reserve(FILE_BUFFER_SIZE);
       std::string full_url = source_token::remplace_token(partial_url, image_token, image_index);
       astd::string_view source_image_name = astd::string_view(full_url).substr(full_url.find_last_of('/') + 1);
-      std::string image_name = (directory_name + "_").append(source_image_name.data(), source_image_name.size());
+      std::string image_name = (directory_name.to_string() + "_").append(source_image_name.data(), source_image_name.size());
       auto image_full_path = directory_full_path / image_name;
 
       file_buffer.clear();

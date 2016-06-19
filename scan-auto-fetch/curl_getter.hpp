@@ -42,7 +42,7 @@ namespace http
             curl_easy_cleanup(handler);
       }
 
-      std::pair<bool, std::string> get(const std::string& url)
+      std::pair<bool, std::string> get(astd::string_view url)
       {
          std::pair<bool, std::string> result{ false, std::string() };
 
@@ -52,7 +52,7 @@ namespace http
             return result;
          }
 
-         curl_easy_setopt(handler, CURLOPT_URL, url.c_str());
+         curl_easy_setopt(handler, CURLOPT_URL, url.data());
          curl_easy_setopt(handler, CURLOPT_WRITEFUNCTION, writer_callback);
          curl_easy_setopt(handler, CURLOPT_WRITEDATA, this);
          curl_easy_setopt(handler, CURLOPT_ERRORBUFFER, error_message.data());

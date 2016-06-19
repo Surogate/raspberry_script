@@ -136,6 +136,7 @@
     <ClInclude Include="error_code.hpp" />
     <ClInclude Include="fetch_image.hpp" />
     <ClInclude Include="source_token.hpp" />
+    <ClInclude Include="Trim.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
