@@ -37,7 +37,7 @@ int main(int argc, char** argv)
          vm);
       boost::program_options::notify(vm);
    }
-   catch (boost::program_options::error e)
+   catch (boost::program_options::error&)
    {
       std::cout << desc << std::endl;
       result = 0;

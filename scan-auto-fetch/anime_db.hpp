@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <algorithm>
 #include "afilesystem.hpp"
 #include "configuration_input.hpp"
 
