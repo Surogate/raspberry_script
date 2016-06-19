@@ -67,11 +67,13 @@ struct fetch_image
          return IMAGE_NOT_FOUND;
       }
       else
-      {
+      {	
          if (!astd::filesystem::exists(directory_full_path))
          {
-            if (!astd::filesystem::create_directory(directory_full_path))
+	   astd::filesystem::error_code ec;
+	   if (!astd::filesystem::create_directories(directory_full_path, ec))
             {
+	      std::cerr << ec.message() << std::endl;
                return CREATE_DESTINATION_FAILED;
             }
          }
@@ -179,10 +181,12 @@ struct fetch_image
          return{ DESTINATION_INVALID, 0 };
       }
 
+      astd::filesystem::error_code ec;
       if (!astd::filesystem::exists(input.destination)
-         && !astd::filesystem::create_directories(input.destination))
+	  && !astd::filesystem::create_directories(input.destination, ec))
       {
          std::cerr << "create target directory failed! (dir: " << input.destination << ")" << std::endl;
+	 std::cerr << ec.message() << std::endl;
          return{ CREATE_DESTINATION_FAILED, 0 };
       }
 
