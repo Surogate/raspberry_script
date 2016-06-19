@@ -55,7 +55,7 @@ int main(int argc, char** argv)
          std::vector<std::future<int>> fetch_results;
          for (auto& config_path : path->second.as<std::vector<astd::filesystem::path>>())
          {
-            fetch_results.emplace_back(std::async(
+            fetch_results.emplace_back(std::async( std::launch::deferred,
                [](const astd::filesystem::path& config_path)
             {
                auto result = 0;
@@ -73,6 +73,10 @@ int main(int argc, char** argv)
                   {
                      std::cout << "successfuly retrieved " << fetch_result.second << " new chapter" << std::endl;
                   }
+               }
+               else
+               {
+                  std::cout << "parsing configuration " << config_path << " failed" << std::endl;
                }
                return result;               
             }, config_path));

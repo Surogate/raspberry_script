@@ -196,11 +196,13 @@ struct fetch_image
       db.input = input;
 
       std::size_t num_fetched = 0;
+      /*
       while ((result = fetch_next_number(db)) == NONE)
       {
          num_fetched++;
          anime_database::dump_anime_db(db_path, db);
       }
+      */
 
       return{ result, num_fetched };
    }
