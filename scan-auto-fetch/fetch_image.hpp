@@ -172,6 +172,13 @@ struct fetch_image
       anime_database db;
       astd::filesystem::path db_path = input.destination / (input.name + ".db");
 
+      auto path_string = astd::basic_string_view<astd::filesystem::path::value_type>(db_path.c_str());
+      if (std::any_of(path_string.begin(), path_string.end(), [](auto val)
+      { return val == '~'; }))
+      {
+         return{ DESTINATION_INVALID, 0 };
+      }
+
       if (!astd::filesystem::exists(input.destination)
          && !astd::filesystem::create_directories(input.destination))
       {
@@ -196,13 +203,12 @@ struct fetch_image
       db.input = input;
 
       std::size_t num_fetched = 0;
-      /*
+      
       while ((result = fetch_next_number(db)) == NONE)
       {
          num_fetched++;
          anime_database::dump_anime_db(db_path, db);
       }
-      */
 
       return{ result, num_fetched };
    }

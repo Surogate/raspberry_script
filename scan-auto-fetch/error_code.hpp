@@ -9,6 +9,7 @@ enum ERROR_CODE : int
 {
    NONE,
    CREATE_DESTINATION_FAILED,
+   DESTINATION_INVALID,
    LOAD_DB_FAILED,
    SOURCE_PATH_PARSING_FAILED,
    DONT_FIND_CHAPTER_NUMBER,
@@ -23,6 +24,7 @@ const std::vector<astd::string_view>& convert_array()
    {
       "NONE",
       "CREATE_DESTINATION_FAILED",
+      "DESTINATION_INVALID",
       "LOAD_DB_FAILED",
       "SOURCE_PATH_PARSING_FAILED",
       "DONT_FIND_CHAPTER_NUMBER",
