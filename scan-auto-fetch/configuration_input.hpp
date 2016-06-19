@@ -46,8 +46,11 @@ struct configuration_input
    //boost tokenizer don't like string_view so we keep std::string ref
    static bool parse_line(astd::string_view str, configuration_input& input)
    {
+      typedef astd::string_view::value_type char_type;
+      typedef boost::char_separator<char_type> separator;
+      typedef boost::tokenizer< separator, astd::string_view::iterator, std::string> view_token;
+
       boost::char_separator<char> sep{" "};
-      typedef boost::tokenizer< boost::char_separator<char>, astd::string_view::iterator, std::string> view_token;
       view_token tok(str, sep);
       std::array<std::string, 3> values;
       std::size_t i = 0;
