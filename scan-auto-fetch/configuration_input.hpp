@@ -10,7 +10,7 @@
 #include "afilesystem.hpp"
 #include "astring_view.hpp"
 #include "boost/tokenizer.hpp"
-#include "Trim.hpp"
+#include "trim.hpp"
 
 struct configuration_input
 {
