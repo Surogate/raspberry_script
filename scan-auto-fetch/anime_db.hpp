@@ -40,20 +40,26 @@ struct anime_database
          std::string line;
          result.first = true;
          bool ok = true;
-         while (std::getline(stream, line))
+         std::size_t line_num = 1;
+         while (result.first && std::getline(stream, line))
          {
             ok = ok && configuration_input::parse_line(line, result.second.input);
             if (!ok)
             {
-               if (std::all_of(line.begin(), line.end(), [](auto& c) { return std::isdigit(c) != 0 || c == '.'; }))
+               if (std::all_of(line.begin(), line.end(), [](auto& c) { return std::isdigit(c) != 0 || c == '.'; })) //if the line is a interger/float
                {
                   result.second.number_fetched.emplace_back(line);
                }
-               else
+               else //something when bad
                {
                   result.first = false;
                }
             }
+            
+            if (!result.first)
+               std::cerr << "error at line : no " << line_num << " : " << line << std::endl;
+            
+            line_num++;
          }
       }
       return result;
