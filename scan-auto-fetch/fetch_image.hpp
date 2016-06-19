@@ -21,16 +21,37 @@ struct fetch_image
       FILE_BUFFER_SIZE = 2018
    };
 
+   struct image
+   {
+      std::string name;
+      std::vector<char> content;
+   };
+
+   struct chapter
+   {
+      astd::filesystem::path directory_full_path;
+      std::vector<image> images;
+   };
+
    static void erase_directory(const astd::filesystem::path& path)
    {
-      auto it = astd::filesystem::directory_iterator(path);
-      auto ite = astd::filesystem::directory_iterator();
+      if (astd::filesystem::exists(path))
+      {
+         astd::filesystem::error_code ec;
+         auto it = astd::filesystem::directory_iterator(path);
+         auto ite = astd::filesystem::directory_iterator();
 
-      while (it != ite){
-         astd::filesystem::remove(*it);
-         ++it;
+         while (it != ite) 
+         {
+            if (!astd::filesystem::remove(*it, ec))
+            {
+               std::cerr << "error removing " << it->path() << " : " << ec.message() << std::endl;
+            }
+            ++it;
+         }
+         if (!astd::filesystem::remove(path, ec))
+            std::cerr << "error removing " << path << " : " << ec.message() << std::endl;
       }
-      astd::filesystem::remove(path);
    }
 
    static bool is_404(const std::vector<char>& buffer)
@@ -44,18 +65,17 @@ struct fetch_image
       return false;
    }
 
-   static int fetch_chapter_image(std::string partial_url
+   //return: image_name, image_content
+   static image fetch_chapter_image(std::string partial_url
       , const source_token& image_token
       , std::size_t image_index
-      , astd::string_view directory_name
-      , const astd::filesystem::path& directory_full_path)
+      , astd::string_view directory_name)
    {
       std::vector<char> file_buffer;
       file_buffer.reserve(FILE_BUFFER_SIZE);
       std::string full_url = source_token::remplace_token(partial_url, image_token, image_index);
       astd::string_view source_image_name = astd::string_view(full_url).substr(full_url.find_last_of('/') + 1);
       std::string image_name = (directory_name.to_string() + "_").append(source_image_name.data(), source_image_name.size());
-      auto image_full_path = directory_full_path / image_name;
 
       file_buffer.clear();
 
@@ -64,66 +84,98 @@ struct fetch_image
 
       if (!getter.first || is_404(file_buffer))
       {
-         return IMAGE_NOT_FOUND;
+         return {};
       }
       else
       {	
-         if (!astd::filesystem::exists(directory_full_path))
+         return{ image_name, file_buffer };  
+      }
+   }
+
+   static int write_chapter(const chapter& chap)
+   {
+      int result = CHAPTER_NOT_FOUND;
+      if (chap.images.size())
+      {
+         result = NONE;
+
+         if (!astd::filesystem::exists(chap.directory_full_path))
          {
-	   astd::filesystem::error_code ec;
-	   if (!astd::filesystem::create_directories(directory_full_path, ec))
+            astd::filesystem::error_code ec;
+            if (!astd::filesystem::create_directories(chap.directory_full_path, ec))
             {
-	      std::cerr << ec.message() << std::endl;
-               return CREATE_DESTINATION_FAILED;
+               std::cerr << ec.message() << std::endl;
+               result = CREATE_DESTINATION_FAILED;
             }
          }
-         std::ofstream stream{ image_full_path.c_str(), std::ios::out | std::ios::trunc | std::ios::binary };
-         if (!stream)
+
+         if (result == NONE)
          {
-            return CREATE_IMAGE_FILE_FAILED;
+            for (auto& image : chap.images)
+            {
+               auto image_full_path = chap.directory_full_path / image.name;
+
+               std::ofstream stream{ image_full_path.c_str(), std::ios::out | std::ios::trunc | std::ios::binary };
+               if (!stream)
+               {
+                  result = CREATE_IMAGE_FILE_FAILED;
+               }
+               else
+               {
+                  stream.write(image.content.data(), image.content.size());
+               }
+            }
          }
-         stream.write(file_buffer.data(), file_buffer.size());
-         return NONE;
+
+         if (result == CREATE_IMAGE_FILE_FAILED)
+         {
+            erase_directory(chap.directory_full_path);
+         }
       }
+
+      return result;
    }
 
    static int fetch_chapter(anime_database& db, const source_token& number_token, const source_token& image_token, std::size_t source_index, std::size_t number_index)
    {
       std::string directory_name = db.input.name + "_" + db.input.language + "_" + number_token.values[number_index];
-      auto directory_full_path = db.input.destination / directory_name;
 
       std::string partial_url = source_token::remplace_token(db.input.sources[source_index], number_token, number_index);
       
-      std::size_t success_count = 0;
       std::size_t image_index = 0;
       std::size_t size = image_token.values.size();
       std::size_t batch_success_count = 1;
+
+      chapter chap;
+      chap.directory_full_path = db.input.destination / directory_name;
+      
       while (image_index < size && batch_success_count > 0)
       {
-         std::vector<std::future<int>> image_get;
+         std::vector< std::future< image > > image_get;
          for (std::size_t i = 0; i < MAX_ERROR_ON_CHAPTER && image_index < size; ++i)
          {
-            image_get.emplace_back(std::async(fetch_chapter_image, partial_url, image_token, image_index, directory_name, directory_full_path));
+            image_get.emplace_back(std::async(fetch_chapter_image, partial_url, image_token, image_index, directory_name));
             ++image_index;
          }
+
          batch_success_count = 0;
          for (auto& image_get_result : image_get)
          {
-            if (image_get_result.get() == NONE)
+            auto image = image_get_result.get();
+            if (image.name.size())
+            {
                batch_success_count++;
+               chap.images.emplace_back(image);
+            }
          }
-         success_count += batch_success_count;
       }
-      if (!success_count)
-      {
-         erase_directory(directory_full_path);
-         return CHAPTER_NOT_FOUND;
-      }
-      else
+
+      int result = write_chapter(chap);
+      if (result == NONE)
       {
          db.number_fetched.push_back(number_token.values[number_index]);
       }
-      return NONE;
+      return result;
    }
 
    static int fetch_from_source(anime_database& db, std::size_t source_index, const astd::string_view starting_number)
