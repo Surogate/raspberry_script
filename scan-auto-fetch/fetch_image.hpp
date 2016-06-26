@@ -136,6 +136,26 @@ struct fetch_image
       return result;
    }
 
+  static void update_perms(const astd::filesystem::path path)
+  {
+    #ifdef __linux
+    {
+    std::stringstream command;
+    command << "sudo chown -R btsync:syncapp " << path;
+    int result = std::system(command.str().c_str());
+    if (result != EXIT_SUCCESS)
+      std::cout << "chown failed" << std::endl;
+    }
+    {
+      std::stringstream command;
+      command << "sudo chmod +w " << path;
+      int result = std::system(command.str().c_str());
+      if (result != EXIT_SUCCESS)
+	std::cout << "chmod failed" << std::endl;
+    }
+    #endif
+  }
+
    static int fetch_chapter(anime_database& db, const source_token& number_token, const source_token& image_token, std::size_t source_index, std::size_t number_index)
    {
       std::string directory_name = db.input.name + "_" + db.input.language + "_" + number_token.values[number_index];
@@ -173,7 +193,9 @@ struct fetch_image
       int result = write_chapter(chap);
       if (result == NONE)
       {
-         db.number_fetched.push_back(number_token.values[number_index]);
+	std::cout << "push value " << number_token.values[number_index] << std::endl;
+	db.number_fetched.push_back(number_token.values[number_index]);
+	update_perms(chap.directory_full_path);
       }
       return result;
    }
