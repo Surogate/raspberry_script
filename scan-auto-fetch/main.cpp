@@ -12,6 +12,47 @@
 #include "curl_getter.hpp"
 #include "error_code.hpp"
 
+int run(const std::vector <astd::filesystem::path>& config_paths)
+{
+   int result = EXIT_SUCCESS;
+
+   std::vector<std::future<int>> fetch_results;
+   for (auto& config_path : config_paths)
+   {
+      fetch_results.emplace_back(std::async(std::launch::deferred,
+         [](const astd::filesystem::path& config_path)
+      {
+         auto result = 0;
+         auto conf_input = configuration_input::parse_config(config_path);
+         if (conf_input.first)
+         {
+            auto fetch_result = fetch_image::fetch(conf_input.second);
+            std::cout << "fetching " << conf_input.second.name << std::endl;
+            if (fetch_result.second == 0)
+            {
+               result = fetch_result.first;
+               std::cerr << "Error: " << std::to_string(ERROR_CODE(result)) << std::endl;
+            }
+            else
+            {
+               std::cout << "successfuly retrieved " << fetch_result.second << " new chapter" << std::endl;
+            }
+         }
+         else
+         {
+            std::cout << "parsing configuration " << config_path << " failed" << std::endl;
+         }
+         return result;
+      }, config_path));
+   }
+
+   for (auto& fetch_result : fetch_results)
+   {
+      result = result & fetch_result.get();
+   }
+   return result;
+}
+
 int main(int argc, char** argv)
 {
    boost::program_options::options_description desc("Allowed options");
@@ -52,40 +93,7 @@ int main(int argc, char** argv)
       auto path = vm.find("c");
       if (path != vm.end())
       {
-         std::vector<std::future<int>> fetch_results;
-         for (auto& config_path : path->second.as<std::vector<astd::filesystem::path>>())
-         {
-            fetch_results.emplace_back(std::async( std::launch::deferred,
-               [](const astd::filesystem::path& config_path)
-            {
-               auto result = 0;
-               auto conf_input = configuration_input::parse_config(config_path);
-               if (conf_input.first)
-               {
-                  auto fetch_result = fetch_image::fetch(conf_input.second);
-                  std::cout << "fetching " << conf_input.second.name << std::endl;
-                  if (fetch_result.second == 0)
-                  {
-                     result = fetch_result.first;
-                     std::cerr << "Error: " << to_string(ERROR_CODE(result)) << std::endl;
-                  }
-                  else
-                  {
-                     std::cout << "successfuly retrieved " << fetch_result.second << " new chapter" << std::endl;
-                  }
-               }
-               else
-               {
-                  std::cout << "parsing configuration " << config_path << " failed" << std::endl;
-               }
-               return result;               
-            }, config_path));
-         }
-
-         for (auto& fetch_result : fetch_results)
-         {
-            result = result & fetch_result.get();
-         }
+         result = run(path->second.as<std::vector<astd::filesystem::path>>());
       }
    }
 

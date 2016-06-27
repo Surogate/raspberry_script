@@ -125,12 +125,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="anime_db.cpp" />
+    <ClCompile Include="configuration_input.cpp" />
+    <ClCompile Include="curl_getter.cpp" />
+    <ClCompile Include="error_code.cpp" />
+    <ClCompile Include="fetch_image.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="source_token.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="afilesystem.hpp" />
     <ClInclude Include="anime_db.hpp" />
-    <ClInclude Include="astring_view.hpp" />
     <ClInclude Include="configuration_input.hpp" />
     <ClInclude Include="curl_getter.hpp" />
     <ClInclude Include="error_code.hpp" />
