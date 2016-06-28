@@ -83,7 +83,7 @@ std::pair<bool, configuration_input> configuration_input::parse_config(const ast
       std::string line;
       while (ok && std::getline(stream, line))
       {
-         auto trimmed_line = trim(line);
+         auto trimmed_line = xts::trim(line);
          ok = parse_line(trimmed_line, result.second);
       }
    }

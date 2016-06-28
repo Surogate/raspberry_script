@@ -34,7 +34,7 @@ std::pair<bool, anime_database> anime_database::parse_anime_db(const astd::files
       std::size_t line_num = 1;
       while (result.first && std::getline(stream, line))
       {
-         auto trimmed_line = trim<char>(line);
+         auto trimmed_line = xts::trim<char>(line);
          ok = ok && configuration_input::parse_line(trimmed_line, result.second.input);
          if (!ok)
          {
