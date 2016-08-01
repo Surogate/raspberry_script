@@ -1,39 +1,44 @@
 #include "error_code.hpp"
 
-const std::vector<astd::string_view>& convert_array()
+namespace Error_code
 {
-   static std::vector<astd::string_view> arr
+   const std::vector<astd::string_view>& convert_array()
    {
-      "NONE",
-      "CREATE_DESTINATION_FAILED",
-      "DESTINATION_INVALID",
-      "LOAD_DB_FAILED",
-      "SOURCE_PATH_PARSING_FAILED",
-      "DONT_FIND_CHAPTER_NUMBER",
-      "CREATE_IMAGE_FILE_FAILED",
-      "CHAPTER_NOT_FOUND",
-      "IMAGE_NOT_FOUND"
-   };
-   return arr;
-}
-
-astd::string_view to_string(const ERROR_CODE& errnum)
-{
-   auto& arr = convert_array();
-   if (errnum > 0 && errnum < (int)arr.size())
-   {
-      return arr[errnum];
+      static std::vector<astd::string_view> arr
+      {
+         "NONE",
+         "CREATE_DESTINATION_FAILED",
+         "DESTINATION_INVALID",
+         "FILE_NOT_FOUND",
+         "LOAD_DB_FAILED",
+         "SOURCE_PATH_PARSING_FAILED",
+         "DONT_FIND_CHAPTER_NUMBER",
+         "CREATE_IMAGE_FILE_FAILED",
+         "CHAPTER_NOT_FOUND",
+         "IMAGE_NOT_FOUND"
+      };
+      return arr;
    }
-   return{};
-}
 
-ERROR_CODE parse(const astd::string_view str)
-{
-   auto& arr = convert_array();
-   auto it = std::find(arr.begin(), arr.end(), str);
-   if (it != arr.end())
+   astd::string_view to_string(const Error_code::Type& errnum)
    {
-      return ERROR_CODE(std::distance(arr.begin(), it));
+      auto& arr = convert_array();
+      if (errnum > 0 && errnum < (int)arr.size())
+      {
+         return arr[errnum];
+      }
+      return{};
    }
-   throw std::runtime_error("bad ERROR_CODE");
+
+   Error_code::Type parse(const astd::string_view str)
+   {
+      auto& arr = convert_array();
+      auto it = std::find(arr.begin(), arr.end(), str);
+      if (it != arr.end())
+      {
+         return Error_code::Type(std::distance(arr.begin(), it));
+      }
+      throw std::runtime_error("bad ERROR_CODE");
+   }
+
 }

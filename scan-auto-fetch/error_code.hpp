@@ -5,23 +5,28 @@
 #include <stdexcept>
 #include "astring_view.hpp"
 
-enum ERROR_CODE : int
+namespace Error_code
 {
-   NONE,
-   CREATE_DESTINATION_FAILED,
-   DESTINATION_INVALID,
-   LOAD_DB_FAILED,
-   SOURCE_PATH_PARSING_FAILED,
-   DONT_FIND_CHAPTER_NUMBER,
-   CREATE_IMAGE_FILE_FAILED,
-   CHAPTER_NOT_FOUND,
-   IMAGE_NOT_FOUND
-};
+   enum Type : int
+   {
+      NONE,
+      CREATE_DESTINATION_FAILED,
+      DESTINATION_INVALID,
+      FILE_NOT_FOUND,
+      LOAD_DB_FAILED,
+      SOURCE_PATH_PARSING_FAILED,
+      DONT_FIND_CHAPTER_NUMBER,
+      CREATE_IMAGE_FILE_FAILED,
+      CHAPTER_NOT_FOUND,
+      IMAGE_NOT_FOUND
+   };
 
-inline const std::vector<astd::string_view>& convert_array();
+const std::vector<astd::string_view>& convert_array();
 
-inline astd::string_view to_string(const ERROR_CODE& errnum);
+astd::string_view to_string(const Error_code::Type& errnum);
 
-inline ERROR_CODE parse(const astd::string_view str);
+Error_code::Type parse(const astd::string_view str);
+
+}
 
 #endif

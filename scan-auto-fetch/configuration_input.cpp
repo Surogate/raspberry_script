@@ -21,7 +21,10 @@ bool configuration_input::dump_config(std::ostream& stream, const configuration_
       dump_value(stream, "name", value.name);
       for (auto& s : value.sources)
          dump_value(stream, "source", s);
-      dump_value(stream, "destination", value.destination.string());
+      for (auto& p : value.search_paths)
+         dump_value(stream, "search_path", p);
+      for (auto& d : value.destination)
+         dump_value(stream, "destination", d.string());
       dump_value(stream, "starting_number", value.starting_number);
       dump_value(stream, "language", value.language);
       return true;
@@ -29,7 +32,6 @@ bool configuration_input::dump_config(std::ostream& stream, const configuration_
    return false;
 }
 
-//boost tokenizer don't like string_view so we keep std::string ref
 bool configuration_input::parse_line(astd::string_view str, configuration_input& input)
 {
    typedef astd::string_view::value_type char_type;
@@ -52,7 +54,8 @@ bool configuration_input::parse_line(astd::string_view str, configuration_input&
       static statemachine_map state_machine = {
          { "name", [](configuration_input& input, std::string& value) { input.name = std::move(value); } },
          { "source", [](configuration_input& input, std::string& value) { input.sources.emplace_back(std::move(value)); } },
-         { "destination", [](configuration_input& input, std::string& value) { input.destination = std::move(value); } },
+         { "search_path", [](configuration_input& input, std::string& value) {input.search_paths.emplace_back(std::move(value)); }},
+         { "destination", [](configuration_input& input, std::string& value) { input.destination.emplace_back(std::move(value)); } },
          { "starting_number", [](configuration_input& input, std::string& value) { input.starting_number = std::move(value); } },
          { "language", [](configuration_input& input, std::string& value) { input.language = std::move(value); } }
       };
@@ -71,21 +74,24 @@ bool configuration_input::parse_line(astd::string_view str, configuration_input&
    return false;
 }
 
-std::pair<bool, configuration_input> configuration_input::parse_config(const astd::filesystem::path& config_path)
+std::pair<Error_code::Type, configuration_input> configuration_input::parse_config(const astd::filesystem::path& config_path)
 {
-   std::pair<bool, configuration_input> result{ false, configuration_input() };
+   std::pair<Error_code::Type, configuration_input> result{ Error_code::FILE_NOT_FOUND, configuration_input() };
    std::ifstream stream{ config_path.c_str() };
 
    if (stream)
    {
       bool ok = true;
-      result.first = true;
       std::string line;
       while (ok && std::getline(stream, line))
       {
          auto trimmed_line = xts::trim(line);
          ok = parse_line(trimmed_line, result.second);
       }
+      if (ok)
+         result.first = Error_code::NONE;
+      else
+         result.first = Error_code::LOAD_DB_FAILED;
    }
 
    return result;

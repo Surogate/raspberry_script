@@ -43,14 +43,6 @@ struct source_token
          values.emplace_back(value);
       }
 
-      std::size_t i = 0;
-      std::size_t size = values.size();
-      while (i < size - 1)
-      {
-         values.push_back(values[i] + "-" + values[i + 1]);
-         ++i;
-      }
-      std::sort(values.begin(), values.end());
       return values;
    }
 

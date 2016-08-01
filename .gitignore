@@ -34,3 +34,17 @@
 /scan-auto-fetch/*.sdf
 /scan-auto-fetch/scan-auto-fetch/Debug/*.idb
 /scan-auto-fetch/scan-auto-fetch/x64/Debug/scan-auto-fetch.tlog/*.tlog
+
+*.iobj
+*.log
+*.tlog
+*.pdb
+*.enc
+*.user
+*.idb
+*.db
+*.ipdb
+*.opendb
+when_is_on/when_is_on
+*.ilk
+*.suo

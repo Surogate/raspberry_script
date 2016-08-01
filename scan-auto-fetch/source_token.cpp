@@ -10,22 +10,17 @@
 source_token::source_token(const astd::string_view source, const astd::string_view name, const astd::string_view number)
 {
    this->name = name;
-   std::string token_name = std::string("<").append(name.data(), name.size());
+   std::string token_name = std::string("<") + name;
    place = get_token_place(source, token_name);
    values = {};
    valid = false;
    if (place.first && place.second)
    {
-      auto type_result = get_type(source, place);
-      if (type_result.first)
+      bool success;
+      std::tie(success, type) = get_type(source, place);
+      if (success)
       {
-         type = std::move(type_result.second);
-         auto values_result = setup_token(name, type, number);
-         if (values_result.first)
-         {
-            values = std::move(values_result.second);
-            valid = true;
-         }
+         std::tie(valid, values) = setup_token(name, type, number);         
       }
    }
 }

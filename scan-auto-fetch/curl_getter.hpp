@@ -5,7 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <utility>
-#include "astring_view.hpp"
+#include "uri.hpp"
 #include <curl/curl.h>
 
 namespace http
@@ -30,7 +30,7 @@ namespace http
    public:
 
       Curl_Getter(const T& callback_)
-         : callback(callback_), error_message(CURL_ERROR_SIZE)
+         : callback(callback_), curl_message(CURL_ERROR_SIZE)
       {
          static curl_static curl_globals;
          handler = curl_easy_init();
@@ -42,39 +42,47 @@ namespace http
             curl_easy_cleanup(handler);
       }
 
-      std::pair<bool, std::string> get(astd::string_view url)
+      std::pair<bool, std::string> get(const xts::uri& url)
       {
-         std::pair<bool, std::string> result{ false, std::string() };
+         bool success = false;
+         std::string error_message;
 
          if (handler == nullptr)
          {
-            result.second = "curl_easy_init return nullptr";
-            return result;
+            error_message = "curl_easy_init return nullptr";
          }
-
-         curl_easy_setopt(handler, CURLOPT_URL, url.data());
-         curl_easy_setopt(handler, CURLOPT_WRITEFUNCTION, writer_callback);
-         curl_easy_setopt(handler, CURLOPT_WRITEDATA, this);
-         curl_easy_setopt(handler, CURLOPT_ERRORBUFFER, error_message.data());
-         result.first = curl_easy_perform(handler) == CURLE_OK;
-         if (!result.first)
+         else if (!url.absolute())
          {
-            result.second = error_message.data();
+            error_message = "url " + url.data() + " is invalid";
+         }
+         else
+         {
+            std::string plain = url.data();
+
+            curl_easy_setopt(handler, CURLOPT_URL, url.data().data());
+            curl_easy_setopt(handler, CURLOPT_WRITEFUNCTION, writer_callback);
+            curl_easy_setopt(handler, CURLOPT_WRITEDATA, this);
+            curl_easy_setopt(handler, CURLOPT_ERRORBUFFER, curl_message.data());
+            success = curl_easy_perform(handler) == CURLE_OK;
+            if (!success && curl_message.size())
+            {
+               error_message = curl_message.data();
+            }
          }
       
-         return result;
+         return{ success, std::move(error_message) };
       }
 
       T callback;
-      std::vector<char> error_message;
+      std::vector<char> curl_message;
       CURL* handler;
    };
 
    template <typename T>
-   std::pair<bool, std::string> curl_get(const astd::string_view url, const T& callback)
+   std::pair<bool, std::string> curl_get(const xts::uri& url, const T& callback)
    {
       Curl_Getter<T> getter(callback);
-      return getter.get({ url.data(), url.size() });
+      return getter.get(url);
    }
 }
 #endif //!CURL_GETTER_HPP

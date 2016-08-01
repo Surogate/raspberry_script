@@ -16,39 +16,42 @@ int run(const std::vector <astd::filesystem::path>& config_paths)
 {
    int result = EXIT_SUCCESS;
 
-   std::vector<std::future<int>> fetch_results;
+   std::vector<std::future<Error_code::Type>> fetch_results;
    for (auto& config_path : config_paths)
    {
-      fetch_results.emplace_back(std::async(std::launch::deferred,
+      fetch_results.emplace_back(std::async(
          [](const astd::filesystem::path& config_path)
       {
-         auto result = 0;
-         auto conf_input = configuration_input::parse_config(config_path);
-         if (conf_input.first)
+         Error_code::Type ec;
+         configuration_input config;
+
+         std::tie(ec, config) = configuration_input::parse_config(config_path);
+         if (ec == Error_code::NONE)
          {
-            auto fetch_result = fetch_image::fetch(conf_input.second);
-            std::cout << "fetching " << conf_input.second.name << std::endl;
-            if (fetch_result.second == 0)
+            std::size_t chapter_found;
+            std::tie(ec, chapter_found) = fetch_image::fetch(config);
+            std::cout << "fetching " << config.name << std::endl;
+            if (chapter_found == 0)
             {
-               result = fetch_result.first;
-               std::cerr << "Error: " << std::to_string(ERROR_CODE(result)) << std::endl;
+               std::cerr << Error_code::to_string(ec) << std::endl;
             }
             else
             {
-               std::cout << "successfuly retrieved " << fetch_result.second << " new chapter" << std::endl;
+               std::cout << "successfuly retrieved " << chapter_found << " new chapter" << std::endl;
             }
          }
          else
          {
             std::cout << "parsing configuration " << config_path << " failed" << std::endl;
+            std::cout << "error : " << Error_code::to_string(ec) << std::endl;
          }
-         return result;
+         return ec;
       }, config_path));
    }
 
    for (auto& fetch_result : fetch_results)
    {
-      result = result & fetch_result.get();
+      result = result & int(fetch_result.get());
    }
    return result;
 }
@@ -62,7 +65,7 @@ int main(int argc, char** argv)
    boost::program_options::positional_options_description p;
    p.add("c", -1);
 
-   int result = 0;
+   int result = EXIT_SUCCESS;
 
    boost::program_options::variables_map vm;
    try {
@@ -80,8 +83,9 @@ int main(int argc, char** argv)
    }
    catch (boost::program_options::error&)
    {
+      std::cerr << "parsing command line failed" << std::endl;
       std::cout << desc << std::endl;
-      result = 0;
+      result = EXIT_FAILURE;
    }
 
    if (vm.count("help"))

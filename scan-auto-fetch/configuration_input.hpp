@@ -12,13 +12,17 @@
 #include "boost/tokenizer.hpp"
 #include "trim.hpp"
 
+#include "error_code.hpp"
+
 struct configuration_input
 {
    std::string name;
    std::vector<std::string> sources;
-   astd::filesystem::path destination;
+   std::vector<std::string> search_paths;
+   std::vector<astd::filesystem::path> destination;
    std::string starting_number = "0";
    std::string language;
+
 
    static void dump_value(std::ostream& stream, const astd::string_view name, const astd::string_view value);
 
@@ -26,7 +30,7 @@ struct configuration_input
 
    static bool parse_line(astd::string_view str, configuration_input& input);
 
-   static std::pair<bool, configuration_input> parse_config(const astd::filesystem::path& config_path);
+   static std::pair<Error_code::Type, configuration_input> parse_config(const astd::filesystem::path& config_path);
 };
 
 
