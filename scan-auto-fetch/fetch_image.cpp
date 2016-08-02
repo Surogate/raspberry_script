@@ -49,11 +49,11 @@ astd::string_view find_image_name(const xts::uri& image_uri)
    return result;
 }
 
-xts::uri find_image_url(const std::vector<char>& buffer, const std::string& pattern, const astd::string_view& chapter_num, const astd::string_view& image_num)
+std::vector<xts::uri> find_image_url(const std::vector<char>& buffer, const std::string& pattern, const astd::string_view& chapter_num)
 {
    typedef std::regex_iterator<std::vector<char>::const_iterator> vregex_iterator;
 
-   xts::uri result;
+   std::vector<xts::uri> result;
    bool keep_searching = true;
    auto beg = buffer.begin();
 
@@ -63,8 +63,17 @@ xts::uri find_image_url(const std::vector<char>& buffer, const std::string& patt
 
       if (search_result != buffer.end())
       {
-         auto end_quote = std::find(search_result, buffer.end(), '"');
-         auto url_image = xts::uri(std::string{ search_result, end_quote });
+         auto start_quote = std::find(search_result, buffer.end(), '"');
+         auto end_quote = std::find(search_result + pattern.size(), buffer.end(), '"');
+         xts::uri url_image;
+         if (start_quote != end_quote) 
+         {
+            url_image = xts::uri(std::string{ start_quote + 1, end_quote });
+         }
+         else
+         {
+            url_image = xts::uri(std::string{ search_result, end_quote });
+         }
          
          bool chapte_num_found = false;
          bool image_num_validated = false;
@@ -79,18 +88,12 @@ xts::uri find_image_url(const std::vector<char>& buffer, const std::string& patt
 
          auto image_name = find_image_name(url_image);
          auto start = image_name.find_first_of("0123456789");
-         auto pos = image_name.find_first_of('.');
-         if (chapte_num_found && pos != astd::string_view::npos)
-         {
-            image_name = image_name.substr(start, pos - start);
-            image_num_validated = image_name.find('-') != astd::string_view::npos
-               || boost::lexical_cast<std::size_t>(image_name) >= boost::lexical_cast<std::size_t>(image_num);
-         }
-         
+         image_num_validated = start != astd::string_view::npos;
+
          if (chapte_num_found && image_num_validated)
          {
             keep_searching = false;
-            result = url_image;
+            result.emplace_back(url_image);
          }
          else
          {
@@ -105,16 +108,15 @@ xts::uri find_image_url(const std::vector<char>& buffer, const std::string& patt
    return result;
 }
 
-xts::uri find_image_url(const std::vector<char>& buffer, const std::vector<std::string>& pattern, const astd::string_view& chapter_num, const astd::string_view& image_num)
+std::vector<xts::uri> find_image_url(const std::vector<char>& buffer, const std::vector<std::string>& pattern, const astd::string_view& chapter_num)
 {
-   xts::uri result;
+   std::vector<xts::uri> result;
    for (auto& p : pattern)
    {
-      result = find_image_url(buffer, p, chapter_num, image_num);
-      if (result.size())
-         return result;
+      auto find_result = find_image_url(buffer, p, chapter_num);
+      result.insert(result.end(), find_result.begin(), find_result.end());
    }
-   return{};
+   return result;
 }
 
 xts::uri insure_complete_image_url(const xts::uri& image_uri, const xts::uri& source_uri)
@@ -342,10 +344,10 @@ bool confirm_image(const xts::uri& image_uri, const astd::string_view& expected_
    return std::search(paths.begin(), paths.end(), expected_chapter_num.begin(), expected_chapter_num.end()) != paths.end();
 }
 
-fetch_image::image fetch_image::chapter_getter::fetch_chapter_image(
+std::vector<xts::uri> 
+fetch_image::chapter_getter::fetch_chapter_uri(
    astd::string_view partial_url
-   , std::size_t image_index
-   , astd::string_view directory_name) const
+   , std::size_t image_index) const
 {
    std::vector<char> webpage_buffer;
    webpage_buffer.reserve(FILE_BUFFER_SIZE);
@@ -359,69 +361,113 @@ fetch_image::image fetch_image::chapter_getter::fetch_chapter_image(
 
    if (get_success && !is_404(webpage_buffer))
    {
-      auto image_url = find_image_url(webpage_buffer, _db.input.search_paths, _number_token.values[_number_index], _image_token.values[image_index]);
-      if (image_url.size())
+      auto result = find_image_url(webpage_buffer, _db.input.search_paths, _number_token.values[_number_index]);
+      for (auto& uri : result)
       {
-         image_url = insure_complete_image_url(image_url, full_url);
-         webpage_buffer.clear();
-
-         std::tie(get_success, error_message) = http::curl_get(image_url, [&webpage_buffer](astd::string_view buffer) mutable
-         { webpage_buffer.insert(webpage_buffer.end(), buffer.begin(), buffer.end()); });
-
-         if (get_success && !is_404(webpage_buffer))
-         {
-            std::string image_name = directory_name.to_string() + "_" + find_image_name(image_url);
-
-            return{ image_name, webpage_buffer };
-         }
+         uri = insure_complete_image_url(uri, full_url);
       }
-      else
-      {
-         error_message = "image url not found in " + full_url.data();
-      }
+      return result;
    }
-
-   //std::cerr << "error while fetching a chapter at " << full_url << " error : " << error_message << std::endl;
    return{};
 }
 
+fetch_image::image 
+fetch_image::chapter_getter::fetch_chapter_image(
+   xts::uri image_url
+   , astd::string_view directory_name) const
+{
+   std::vector<char> webpage_buffer;
+   bool get_success;
+   std::string error_message;
+
+   webpage_buffer.reserve(FILE_BUFFER_SIZE);
+   std::tie(get_success, error_message) = http::curl_get(image_url, [&webpage_buffer](astd::string_view buffer) mutable
+   { webpage_buffer.insert(webpage_buffer.end(), buffer.begin(), buffer.end()); });
+
+   if (get_success && !is_404(webpage_buffer))
+   {
+      std::string image_name = directory_name.to_string() + "_" + find_image_name(image_url);
+
+      return{ image_name, webpage_buffer };
+   }
+   error_message = "image not found at " + image_url.data();
+   return{};
+}
+
+std::vector<xts::uri> remove_duplicate(std::vector<xts::uri> vec)
+{
+   std::sort(vec.begin(), vec.end());
+   vec.erase(std::unique(vec.begin(), vec.end(), [](auto& lhs, auto& rhs) {return find_image_name(lhs) == find_image_name(rhs); }), vec.end());
+   return vec;
+}
 
 fetch_image::chapter fetch_image::chapter_getter::operator()() const
 {
-   std::string directory_name = _db.input.name + "_" + _db.input.language + "_" + _number_token.values[_number_index];
-   std::string partial_url = source_token::remplace_token(_db.input.sources[_source_index], _number_token, _number_index);
+   return fetch_chapter(fetch_chapter_uri_all());
+}
 
+std::vector<xts::uri> fetch_image::chapter_getter::fetch_chapter_uri_all() const
+{
    std::size_t image_index = 0;
    std::size_t size = _image_token.values.size();
    std::size_t batch_success_count = 1;
+   std::string partial_url = source_token::remplace_token(_db.input.sources[_source_index], _number_token, _number_index);
 
-   chapter chap;
-   chap.directory_full_path = _destination / directory_name;
+   std::vector< xts::uri > image_uris;
+
 
    while (image_index < size && batch_success_count > 0)
    {
-      std::vector< std::future< image > > image_get;
+      std::vector< std::future< std::vector< xts::uri > > > image_uris_fetched;
       for (std::size_t i = 0; i < MAX_ERROR_ON_CHAPTER && image_index < size; ++i)
-      {         
-         image_get.emplace_back(std::async(
-            &chapter_getter::fetch_chapter_image, this, astd::string_view(partial_url), image_index, astd::string_view(directory_name)));
+      {
+         image_uris_fetched.emplace_back(std::async(
+#ifdef _DEBUG
+            std::launch::deferred,
+#endif
+            &chapter_getter::fetch_chapter_uri, this, astd::string_view(partial_url), image_index));
          ++image_index;
       }
 
       batch_success_count = 0;
-      for (auto& image_get_result : image_get)
+      for (auto& image_uri_fetched : image_uris_fetched)
       {
-         auto image = image_get_result.get();
-         if (image.name.size())
+         auto image_uri = image_uri_fetched.get();
+         if (image_uri.size())
          {
             batch_success_count++;
-            if (std::find_if(chap.images.begin(), chap.images.end(), [&image](auto& inplace)
-            { return inplace.name == image.name; }) == chap.images.end())
-            {
-               chap.images.emplace_back(image);
-            }
+            image_uris.insert(image_uris.end(), image_uri.begin(), image_uri.end());
          }
       }
+   }
+
+   image_uris = remove_duplicate(image_uris);
+   return image_uris;
+}
+
+
+fetch_image::chapter 
+fetch_image::chapter_getter::fetch_chapter(
+   const std::vector<xts::uri>& image_uris) const
+{
+   std::string directory_name = _db.input.name + "_" + _db.input.language + "_" + _number_token.values[_number_index];
+   chapter chap;
+   chap.directory_full_path = _destination / directory_name;
+   std::vector< std::future< image > > image_get;
+
+   for (auto& uri : image_uris)
+   {
+      image_get.emplace_back(std::async(
+#ifdef _DEBUG
+         std::launch::deferred,
+#endif
+         &chapter_getter::fetch_chapter_image, this, uri, directory_name
+      ));
+   }
+
+   for (auto& future_image : image_get)
+   {
+      chap.images.emplace_back(future_image.get());
    }
 
    return chap;

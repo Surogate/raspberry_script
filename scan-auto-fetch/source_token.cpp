@@ -91,6 +91,7 @@ std::pair<bool, std::vector<std::string>> source_token::setup_token(astd::string
    {
       std::vector<std::string> values;
       values.emplace_back(boost::lexical_cast<std::string>(boost::lexical_cast<int>(number) + 1));
+      values.emplace_back(boost::lexical_cast<std::string>(boost::lexical_cast<int>(number) + 2));
       return values;
    }
          } //!pair & token type

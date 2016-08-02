@@ -40,10 +40,18 @@ struct fetch_image
       chapter operator()() const;
 
    private:
-      image fetch_chapter_image(
+      std::vector<xts::uri> fetch_chapter_uri_all() const;
+
+      std::vector<xts::uri> fetch_chapter_uri(
           astd::string_view partial_url
-         , std::size_t image_index
+         , std::size_t image_index) const;
+
+      image fetch_chapter_image(
+         xts::uri image_url
          , astd::string_view directory_name) const;
+
+      chapter fetch_chapter(
+         const std::vector<xts::uri>& image_uris) const;
 
       enum
       {

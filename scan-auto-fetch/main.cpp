@@ -20,6 +20,9 @@ int run(const std::vector <astd::filesystem::path>& config_paths)
    for (auto& config_path : config_paths)
    {
       fetch_results.emplace_back(std::async(
+#ifdef _DEBUG
+         std::launch::deferred,
+#endif
          [](const astd::filesystem::path& config_path)
       {
          Error_code::Type ec;
