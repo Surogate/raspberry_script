@@ -1,4 +1,5 @@
 #include "error_code.hpp"
+#include <algorithm>
 
 namespace Error_code
 {
