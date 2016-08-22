@@ -1,0 +1,1 @@
+sg syncapp -c './scan-auto-fetch -c /home/pi/Projet/raspberry_script/gintama.conf /home/pi/Projet/raspberry_script/onepiece.conf /home/pi/Projet/raspberry_script/onepunchman.conf /home/pi/Projet/raspberry_script/shingeki-no-kyojin.conf'
