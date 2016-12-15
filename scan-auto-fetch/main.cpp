@@ -12,7 +12,7 @@
 #include "curl_getter.hpp"
 #include "error_code.hpp"
 
-int run(const std::vector <astd::filesystem::path>& config_paths)
+int run(const std::vector<astd::filesystem::path>& config_paths)
 {
    int result = EXIT_SUCCESS;
 

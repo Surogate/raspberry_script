@@ -184,7 +184,7 @@ void fetch_image::update_perms(const astd::filesystem::path path)
 #ifdef __linux
 {
    std::stringstream command;
-   command << "sudo chown -R btsync:syncapp " << path;
+   command << "sudo chgrp -R syncapp " << path;
    int result = std::system(command.str().c_str());
    if (result != EXIT_SUCCESS)
       std::cout << "chown failed" << std::endl;
