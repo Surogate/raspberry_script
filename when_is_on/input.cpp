@@ -16,7 +16,7 @@ std::ostream& operator<<(std::ostream& stream, const input& in)
    stream << "thread " << (in.threaded_script ? "true" : "false"); stream << std::endl;
    stream << "ips" << std::endl;
    for (auto& ip : in.ips)
-      stream << ip << std::endl;
+      stream << ipv4::serialize_to_string(ip) << std::endl;
    stream << "script_all" << std::endl;
    for (auto& sc : in.script_all)
       stream << sc << std::endl;
@@ -102,12 +102,25 @@ xts::return_status<std::vector<std::string>> parse_param(const boost::program_op
    return xts::return_status<std::vector<std::string>>();
 }
 
+xts::return_status<std::vector<ipv4>> parse_to_ips(const xts::return_status<std::vector<std::string>>& input)
+{
+	std::vector<ipv4> result;
+	if (input)
+	{
+		for (const auto& line : input.value())
+		{
+			result.emplace_back(ipv4::parse_from_string(line));
+		}
+	}
+	return xts::return_status<std::vector<ipv4>>( input.status() , std::move(result) );
+}
+
 xts::return_status<input> parse_input(const boost::program_options::variables_map& vm)
 {
    int result = EXIT_SUCCESS;
    input input_instance;
 
-   auto ip_param = parse_param(vm, "ip");
+   auto ip_param = parse_to_ips(parse_param(vm, "ip"));
    if (ip_param)
    {
       input_instance.ips = ip_param.value();

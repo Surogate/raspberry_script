@@ -5,6 +5,7 @@
 #include <utility>
 #include <future>
 #include <fstream>
+#include <array>
 
 #include "input.hpp"
 
@@ -61,7 +62,7 @@ ip_test_result test_ips(const input& in)
    for (auto& ip : in.ips)
    {
      ping_results.emplace_back(std::async(std::launch::deferred, [&ip]() { 
-         return std::system((std::string("ping ") + ip).c_str()); 
+         return std::system((std::string("ping ") + ipv4::serialize_to_string(ip)).c_str()); 
       }));
    }
 
