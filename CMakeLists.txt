@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.7)
 
-include (utility.cmake)
+include (xtsslib/utility.cmake)
 
 project (rasberry_script)
 
